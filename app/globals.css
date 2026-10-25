@@ -35,6 +35,18 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* niente zoom col doppio tocco */
+  touch-action: manipulation;
+}
+
+/* iPhone ingrandisce la pagina quando tocchi un campo con testo sotto i 16px:
+   su telefono tutti i campi sono a 16px, così lo zoom non scatta mai. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 body {

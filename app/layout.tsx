@@ -27,6 +27,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Niente zoom della pagina (pizzico / doppio tocco): l'app si comporta come un'app nativa.
+  // I grafici hanno il loro zoom interno, che resta.
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
 };
 

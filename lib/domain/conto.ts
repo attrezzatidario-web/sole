@@ -18,6 +18,14 @@ export interface ImpostazioniConto {
   periodi: number;
 }
 
+/** Un conto: nome e valuta, più i parametri del suo piano. */
+export interface Conto extends ImpostazioniConto {
+  id: string;
+  nome: string;
+  valuta: string; // simbolo mostrato accanto agli importi (€, $…)
+  ordine: number;
+}
+
 export const IMPOSTAZIONI_PREDEFINITE: ImpostazioniConto = {
   capitale_iniziale: 20000,
   profitto_pct: 0.5,
@@ -38,9 +46,11 @@ export interface PeriodoPiano {
 
 export interface VoceJournal {
   id: string;
+  conto_id?: string;
   data: string; // YYYY-MM-DD
-  pnl: number; // profitto/perdita con commissioni, in €
+  pnl: number; // profitto/perdita con commissioni, nella valuta del conto
   nota: string | null;
+  creato_il?: string;
 }
 
 export interface RigaJournal extends VoceJournal {
@@ -76,7 +86,10 @@ export function calcolaPiano(s: ImpostazioniConto): PeriodoPiano[] {
 
 /** Journal in ordine cronologico, con il capitale che passa da una riga alla successiva. */
 export function calcolaJournal(voci: VoceJournal[], capitaleIniziale: number): RigaJournal[] {
-  const ordinate = [...voci].sort((a, b) => a.data.localeCompare(b.data) || a.id.localeCompare(b.id));
+  // a parità di data conta l'ordine di inserimento (creato_il), poi l'id
+  const ordinate = [...voci].sort(
+    (a, b) => a.data.localeCompare(b.data) || (a.creato_il ?? "").localeCompare(b.creato_il ?? "") || a.id.localeCompare(b.id)
+  );
   let capitale = capitaleIniziale;
   return ordinate.map((v, i) => {
     const riga: RigaJournal = {
@@ -98,7 +111,15 @@ export interface Riepilogo {
   periodoAttuale: number; // operazioni registrate
   capitalePiano: number | null; // dove dovresti essere secondo il piano
   scartoPiano: number | null; // reale − piano
-  prossima: { rischio: number; lotto: number; obiettivo: number; pips: number };
+  pianoFinito: boolean; // hai registrato più operazioni dei periodi del piano
+  prossima: {
+    rischio: number; // rischio teorico (capitale × rischio%)
+    lotto: number; // lotto teorico
+    lottoBroker: number; // arrotondato PER DIFETTO a 0,01: non supera mai il rischio scelto
+    rischioEffettivo: number; // rischio con il lotto arrotondato
+    obiettivo: number;
+    pips: number; // pips per l'obiettivo col lotto arrotondato
+  };
 }
 
 export function riepilogo(s: ImpostazioniConto, piano: PeriodoPiano[], journal: RigaJournal[]): Riepilogo {
@@ -107,6 +128,7 @@ export function riepilogo(s: ImpostazioniConto, piano: PeriodoPiano[], journal: 
   const n = journal.length;
   const capitalePiano = piano[n]?.capitale ?? null;
   const lotto = lottoPer(capitaleAttuale, s);
+  const lottoBroker = Math.floor(lotto * 100 + 1e-9) / 100;
   const obiettivo = (capitaleAttuale * s.profitto_pct) / 100;
   return {
     capitaleAttuale,
@@ -115,19 +137,36 @@ export function riepilogo(s: ImpostazioniConto, piano: PeriodoPiano[], journal: 
     periodoAttuale: n,
     capitalePiano,
     scartoPiano: capitalePiano !== null ? capitaleAttuale - capitalePiano : null,
+    pianoFinito: n > s.periodi,
     prossima: {
       rischio: (capitaleAttuale * s.rischio_pct) / 100,
       lotto,
+      lottoBroker,
+      rischioEffettivo: lottoBroker * s.pips_stop * s.valore_pip,
       obiettivo,
-      pips: lotto > 0 ? obiettivo / (lotto * s.valore_pip) : 0,
+      pips: lottoBroker > 0 ? obiettivo / (lottoBroker * s.valore_pip) : 0,
     },
   };
 }
 
-export const euro = (v: number | null | undefined, segno = false) =>
+export const importo = (v: number | null | undefined, valuta = "€", segno = false) =>
   v === null || v === undefined || Number.isNaN(v)
     ? "—"
-    : `${segno && v > 0 ? "+" : ""}${v.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+    : `${segno && v > 0 ? "+" : ""}${v.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${valuta}`;
+
+/**
+ * Legge un numero scritto all'italiana ("1.250,5") o all'inglese ("1250.5"). null se non valido.
+ * Con `importo` un "1.250" senza virgola è milleduecentocinquanta (separatore delle migliaia),
+ * negli altri campi (percentuali, pips) resta 1,25.
+ */
+export function leggiNumero(testo: string, importo = false): number | null {
+  let t = testo.trim().replace(/\s|€|\$|%/g, "");
+  if (!t) return null;
+  if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+  else if (importo && /^-?[1-9]\d{0,2}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
 
 export const percento = (frazione: number, segno = true) =>
   `${segno && frazione > 0 ? "+" : ""}${(frazione * 100).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
