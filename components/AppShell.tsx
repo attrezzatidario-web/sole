@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, BookOpen, CalendarDays, Coins, History, Layers, LayoutGrid, Radio, Settings } from "lucide-react";
+import { BarChart3, BookOpen, CalendarDays, Coins, History, Layers, LayoutGrid, Radio, Settings, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import InstallButton from "./InstallButton";
@@ -16,6 +16,7 @@ const NAV = [
   { href: "/calendario/", label: "Notizie", Icon: CalendarDays },
   { href: "/key-levels/", label: "Livelli", Icon: Layers },
   { href: "/diario/", label: "Diario", Icon: BookOpen },
+  { href: "/conto/", label: "Conto", Icon: Wallet },
 ];
 
 // Solo nel menu da desktop, per non affollare la barra in basso sul telefono
@@ -85,7 +86,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/90 backdrop-blur-xl md:hidden"
         aria-label="Navigazione principale"
       >
-        <div className="mx-auto grid max-w-md grid-cols-7">
+        <div className="mx-auto grid max-w-lg grid-cols-8">
           {NAV.map(({ href, label, Icon }) => {
             const on = attivo(href, pathname);
             return (
