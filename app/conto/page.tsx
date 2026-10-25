@@ -195,7 +195,7 @@ export default function ContoPage() {
       {avviso && (
         <div
           role="status"
-          className={`fixed inset-x-4 bottom-24 z-40 mx-auto max-w-sm rounded-xl px-4 py-3 text-center text-sm font-medium shadow-card md:bottom-8 ${
+          className={`fixed inset-x-4 bottom-28 z-40 mx-auto max-w-sm rounded-xl px-4 py-3 text-center text-sm font-medium shadow-card md:bottom-8 ${
             avviso.tipo === "ok" ? "bg-fg text-bg" : "bg-down text-white"
           }`}
         >

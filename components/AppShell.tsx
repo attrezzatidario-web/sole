@@ -75,30 +75,35 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6 md:pb-12">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 pb-32 pt-6 sm:px-6 md:pb-12">{children}</main>
 
-      <footer className="mx-auto max-w-6xl px-4 pb-28 text-xs leading-relaxed text-muted sm:px-6 md:pb-10">
+      <footer className="mx-auto max-w-6xl px-4 pb-32 text-xs leading-relaxed text-muted sm:px-6 md:pb-10">
         Strumento informativo di monitoraggio personale. Nessun contenuto è consulenza
         finanziaria né un segnale di acquisto o vendita.
       </footer>
 
+      {/* Barra in basso (telefono): fluttuante, staccata dai bordi, con capsula sulla sezione attiva */}
       <nav
-        className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/90 backdrop-blur-xl md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 px-2 md:hidden"
+        style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
         aria-label="Navigazione principale"
       >
-        <div className="mx-auto grid max-w-lg grid-cols-8">
+        <div className="mx-auto grid max-w-lg grid-cols-8 rounded-[26px] border border-line/70 bg-surface p-1 shadow-[0_8px_30px_-6px_rgb(15_23_32/0.18)] backdrop-blur-xl">
           {NAV.map(({ href, label, Icon }) => {
             const on = attivo(href, pathname);
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition ${
-                  on ? "text-accent" : "text-muted"
+                aria-current={on ? "page" : undefined}
+                className={`flex min-w-0 flex-col items-center gap-1 rounded-[20px] py-2 transition-colors active:scale-95 ${
+                  on ? "bg-accent/15 text-accent" : "text-muted active:bg-surface2"
                 }`}
               >
-                <Icon size={21} strokeWidth={on ? 2.2 : 1.8} />
-                {label}
+                <Icon size={21} strokeWidth={on ? 2 : 1.6} />
+                <span className={`w-full truncate text-center text-[10px] leading-none tracking-tight ${on ? "font-semibold" : "font-medium"}`}>
+                  {label}
+                </span>
               </Link>
             );
           })}
